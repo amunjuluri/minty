@@ -1,15 +1,17 @@
-import { redirect } from 'next/navigation';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/auth';
-import { createGitHubService } from '@/lib/github';
-import type { GitHubRepository } from '@/types/github';
-import LogoutButton from '@/components/LogoutButton';
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { createGitHubService } from "@/lib/github";
+import type { GitHubRepository } from "@/types/github";
+import LogoutButton from "@/components/LogoutButton";
+
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
-
+  console.log("loginsessions", session);
   if (!session?.accessToken) {
-    redirect('/auth/signin');
+    redirect("/auth/signin");
   }
 
   const github = createGitHubService(session.accessToken);
@@ -23,40 +25,49 @@ export default async function DashboardPage() {
       </div>
 
       {error ? (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded" role="alert">
+        <div
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded"
+          role="alert"
+        >
           {error.message}
         </div>
       ) : !repos ? (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded" role="alert">
+        <div
+          className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded"
+          role="alert"
+        >
           No repositories found
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {repos.map((repo: GitHubRepository) => (
-            <div 
-              key={repo.id} 
-              className="p-4 border rounded-lg hover:border-green-500 transition-colors"
+            <Link
+              key={repo.id}
+              href={`/dashboard/${repo.name}`}
+              className="block"
             >
-              <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-lg">{repo.name}</h2>
-                <span className="text-sm text-gray-500">
-                  {repo.visibility}
-                </span>
+              <div className="p-4 border rounded-lg hover:border-green-500 hover:shadow-md transition-all cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-lg">{repo.name}</h2>
+                  <span className="text-sm text-gray-500">
+                    {repo.visibility}
+                  </span>
+                </div>
+                {repo.description && (
+                  <p className="mt-2 text-gray-600 text-sm line-clamp-2">
+                    {repo.description}
+                  </p>
+                )}
+                <div className="mt-4 flex gap-2">
+                  <span className="text-sm text-gray-500">
+                    {repo.language || "No language detected"}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    ★ {repo.stargazers_count}
+                  </span>
+                </div>
               </div>
-              {repo.description && (
-                <p className="mt-2 text-gray-600 text-sm line-clamp-2">
-                  {repo.description}
-                </p>
-              )}
-              <div className="mt-4 flex gap-2">
-                <span className="text-sm text-gray-500">
-                  {repo.language || 'No language detected'}
-                </span>
-                <span className="text-sm text-gray-500">
-                  ★ {repo.stargazers_count}
-                </span>
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
