@@ -1,48 +1,56 @@
+// app/api/repos/[repoName]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { GitHubService } from "@/lib/github-service";
-import { authOptions } from "@/auth";
-import { getServerSession } from "next-auth";
+import { createGitHubService } from "@/lib/github";
+
+interface RouteParams {
+  params: Promise<{ repoName: string }>;
+}
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ repoName: string }> | { repoName: string } }
+  props: RouteParams
 ) {
-  console.log("aaaaaaaaaaaaaaaaaaaa");
-
-  const token = request.nextUrl.searchParams.get("token");
-  const username = request.nextUrl.searchParams.get("username");
-
-  console.log("did i get the token", token);
-  console.log("did i get the username", username);
-
-  if (!token) {
-    return NextResponse.json(
-      { error: "No authorization token provided" },
-      { status: 401 }
-    );
-  }
-
-  if (!username) {
-    return NextResponse.json(
-      { error: "No username provided" },
-      { status: 401 }
-    );
-  }
-
-  const resolvedParams = await params;
-  console.log("params mannnnn", resolvedParams);
-
   try {
-    const githubService = new GitHubService(token);
-    const { owner, content } = await githubService.getRepositoryContent(
-      username + "/" + resolvedParams.repoName
-      // Pass username to the service
-    );
+    const token = request.nextUrl.searchParams.get("token");
+    const username = request.nextUrl.searchParams.get("username");
 
-    return NextResponse.json({
-      owner,
-      content,
-    });
+    if (!token) {
+      return NextResponse.json(
+        { error: "No authorization token provided" },
+        { status: 401 }
+      );
+    }
+
+    if (!username) {
+      return NextResponse.json(
+        { error: "No username provided" },
+        { status: 401 }
+      );
+    }
+
+    const resolvedParams = await props.params;
+    const repoName = resolvedParams.repoName;
+    
+    const githubService = createGitHubService(token);
+    const repoFullName = `${username}/${repoName}`;
+    
+    const response = await githubService.getRepositoryContent(repoFullName);
+
+    if (response.error) {
+      return NextResponse.json(
+        { error: response.error.message },
+        { status: response.error.status || 500 }
+      );
+    }
+
+    if (!response.data) {
+      return NextResponse.json(
+        { error: "No content found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(response.data);
   } catch (error) {
     console.error("Error in GitHub API route:", error);
     return NextResponse.json(

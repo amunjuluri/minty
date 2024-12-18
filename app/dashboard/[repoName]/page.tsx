@@ -1,20 +1,36 @@
+// app/dashboard/[repoName]/page.tsx
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
 import Link from "next/link";
+import type { GitHubContent } from "@/types/github";
+import type { Session } from "next-auth";
 
 interface RepoContentProps {
   repoName: string;
 }
 
+interface RepoResponse {
+  owner: string;
+  content: GitHubContent[];
+}
+
 async function RepoContent({ repoName }: RepoContentProps) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as Session;
+
+    if (!session?.accessToken) {
+      redirect("/auth/signin");
+    }
+
+    if (!session.user.username) {
+      throw new Error("GitHub username not found in session");
+    }
 
     const response = await fetch(
-      `${baseUrl}/api/repos/${repoName}?token=${session?.accessToken}&username=${session?.user.username}`,
+      `${baseUrl}/api/repos/${repoName}?token=${session.accessToken}&username=${session.user.username}`,
       {
         next: { revalidate: 60 },
       }
@@ -28,7 +44,7 @@ async function RepoContent({ repoName }: RepoContentProps) {
       throw new Error(`Failed to fetch repository: ${repoName}`);
     }
 
-    const { owner, content } = await response.json();
+    const { owner, content } = (await response.json()) as RepoResponse;
 
     return (
       <div className="p-6">
@@ -45,7 +61,7 @@ async function RepoContent({ repoName }: RepoContentProps) {
         </div>
 
         <div className="space-y-4">
-          {content.map((item: any) => (
+          {content.map((item) => (
             <div
               key={item.path}
               className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -66,15 +82,16 @@ async function RepoContent({ repoName }: RepoContentProps) {
   }
 }
 
-export default async function RepositoryPage({
-  params,
-}: {
-  params: Promise<{ repoName: string }> | { repoName: string };
-}) {
-  const resolvedParams = await params;
-  const val = resolvedParams.repoName;
+interface PageParams {
+  params: Promise<{ repoName: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
 
-  if (!val) {
+export default async function RepositoryPage(props: PageParams) {
+  const resolvedParams = await props.params;
+  const repoName = resolvedParams.repoName;
+
+  if (!repoName) {
     notFound();
   }
 
@@ -90,7 +107,7 @@ export default async function RepositoryPage({
           </div>
         }
       >
-        <RepoContent repoName={val} />
+        <RepoContent repoName={repoName} />
       </Suspense>
     </div>
   );
