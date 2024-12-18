@@ -226,7 +226,7 @@ const Home: NextPage = () => {
               variants={fadeInVariants}
               custom={0.9}
             >
-              A modern documentation generator that makes your GitHub project shine.
+              A modern documentation generator that makes your GitHub project shine.<br/>
               Simple, elegant, and refreshingly easy to use.
             </motion.p>
 
