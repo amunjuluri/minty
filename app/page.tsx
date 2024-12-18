@@ -1,5 +1,6 @@
 'use client'
 import type { NextPage } from 'next';
+import { useRouter } from 'next/navigation';
 import { motion, Variants } from "framer-motion";
 import { Github, ArrowRight, Book, Boxes, GitBranch, LucideIcon, Sparkles } from "lucide-react";
 
@@ -130,6 +131,11 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
 );
 
 const Home: NextPage = () => {
+  const router = useRouter();
+
+  const handleClick = (): void => {
+    router.push('/auth/signin'); // Redirect to the desired route
+  };
   const features: Omit<FeatureCardProps, 'index'>[] = [
     {
       icon: Book,
@@ -237,6 +243,7 @@ const Home: NextPage = () => {
               custom={1.1}
             >
               <motion.button 
+                onClick={handleClick}
                 variants={buttonVariants}
                 initial="initial"
                 whileHover="hover"
