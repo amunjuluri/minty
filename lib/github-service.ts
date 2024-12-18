@@ -52,7 +52,7 @@ export class GitHubService {
       // change required here
 
       const response = await axios.get(
-        `${this.baseUrl}/repos/${owner}/${repo}/contents/Car_Rental/src/App.jsx`,
+        `${this.baseUrl}/repos/${owner}/${repo}/contents`,
         { headers: this.getHeaders() }
       );
       console.log("aaaaaaaaaaaaaaaaaaaaaaaaaa", response.data);
