@@ -4,18 +4,54 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111827;
+  --mint-50: #f0fdf4;
+  --mint-100: #dcfce7;
+  --mint-500: #22c55e;
+  --mint-600: #16a34a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #111827;
   }
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  background-image: 
+    radial-gradient(circle at 100% 100%, var(--mint-50) 0%, transparent 25%),
+    radial-gradient(circle at 0% 0%, var(--mint-50) 0%, transparent 25%);
+  background-attachment: fixed;
+}@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #111827;
+  --mint-50: #f0fdf4;
+  --mint-100: #dcfce7;
+  --mint-500: #22c55e;
+  --mint-600: #16a34a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ffffff;
+    --foreground: #111827;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+  background-image: 
+    radial-gradient(circle at 100% 100%, var(--mint-50) 0%, transparent 25%),
+    radial-gradient(circle at 0% 0%, var(--mint-50) 0%, transparent 25%);
+  background-attachment: fixed;
 }
