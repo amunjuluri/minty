@@ -48,11 +48,14 @@ export class GitHubService {
         throw new Error('Repository name must be in format "owner/repo"');
       }
       console.log("getrepsoitorycontent", owner, repo);
-      // Directly fetch contents using owner and repo name
+      // !Directly fetch contents using owner and repo name
+      // change required here
+
       const response = await axios.get(
-        `${this.baseUrl}/repos/${owner}/${repo}/contents`,
+        `${this.baseUrl}/repos/${owner}/${repo}/contents/Car_Rental/src/App.jsx`,
         { headers: this.getHeaders() }
       );
+      console.log("aaaaaaaaaaaaaaaaaaaaaaaaaa", response.data);
 
       const contents = response.data.map((item: any) => ({
         name: item.name,
