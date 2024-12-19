@@ -6,14 +6,13 @@ interface RouteParams {
   params: Promise<{ repoName: string }>;
 }
 
-export async function GET(
-  request: NextRequest,
-  props: RouteParams
-) {
+export async function GET(request: NextRequest, props: RouteParams) {
   try {
+    // Get token and username from query parameters
     const token = request.nextUrl.searchParams.get("token");
     const username = request.nextUrl.searchParams.get("username");
 
+    // Validate required parameters
     if (!token) {
       return NextResponse.json(
         { error: "No authorization token provided" },
@@ -28,13 +27,15 @@ export async function GET(
       );
     }
 
+    // Get repoName from route parameter
     const resolvedParams = await props.params;
     const repoName = resolvedParams.repoName;
-    
+
+    // Create GitHub service and fetch repository content
     const githubService = createGitHubService(token);
     const repoFullName = `${username}/${repoName}`;
-    
-    const response = await githubService.getRepositoryContent(repoFullName);
+    console.log("aaaaaaaaaaaa", repoFullName);
+    const response = await githubService.getAllRepositoryContents(repoFullName);
 
     if (response.error) {
       return NextResponse.json(
@@ -44,10 +45,7 @@ export async function GET(
     }
 
     if (!response.data) {
-      return NextResponse.json(
-        { error: "No content found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "No content found" }, { status: 404 });
     }
 
     return NextResponse.json(response.data);
