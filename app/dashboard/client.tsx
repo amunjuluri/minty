@@ -1,3 +1,4 @@
+// app/dashboard/client.tsx
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -5,7 +6,7 @@ import type { GitHubRepository, GitHubError } from "@/types/github";
 import LogoutButton from "@/components/LogoutButton";
 import Link from "next/link";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, Filter } from 'lucide-react';
+import { Search, Star, Filter, Menu, X, Plus, Github } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
   Card,
@@ -20,6 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 
 // Types
 type FilterType = 'all' | 'public' | 'private';
@@ -257,24 +261,25 @@ const formatTimeAgo = (dateString: string): string => {
 
   if (diffInMonths > 12) {
     const years = Math.floor(diffInMonths / 12);
-    return `Updated ${years} ${years === 1 ? 'year' : 'years'} ago`;
+    return `${years}y ago`;
   }
   if (diffInMonths >= 1) {
-    return `Updated ${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`;
+    return `${diffInMonths}mo ago`;
   }
   if (diffInDays >= 1) {
-    return `Updated ${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
+    return `${diffInDays}d ago`;
   }
   if (diffInHours >= 1) {
-    return `Updated ${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+    return `${diffInHours}h ago`;
   }
   if (diffInMinutes >= 1) {
-    return `Updated ${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+    return `${diffInMinutes}m ago`;
   }
-  return 'Updated just now';
+  return 'just now';
 };
 
-const ClientDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }) => {
+const ModernDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [repos] = useState<GitHubRepository[]>(initialRepos || []);
@@ -325,12 +330,10 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }
 
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
-      // Update sequences
       sequences.current.konami += e.key;
       sequences.current.mint += e.key.toLowerCase();
       sequences.current.fresh += e.key.toLowerCase();
 
-      // Trim sequences
       if (sequences.current.konami.length > 10) {
         sequences.current.konami = sequences.current.konami.slice(1);
       }
@@ -341,7 +344,6 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }
         sequences.current.fresh = sequences.current.fresh.slice(1);
       }
 
-      // Check sequences
       if (sequences.current.konami.includes('ArrowUpArrowUpArrowDownArrowDownArrowLeftArrowRightArrowLeftArrowRightba')) {
         handleSequence('konami');
         sequences.current.konami = '';
@@ -368,7 +370,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {matrixMode && <EnhancedMatrixEffect />}
       {mintRain && <MintRainEffect />}
       <AnimatePresence>
@@ -377,68 +379,155 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }
             key={leaf.id}
             initial={{ opacity: 1, x: leaf.x, y: leaf.y, scale: 0 }}
             animate={{ 
-                opacity: 0,
-                y: leaf.y - 100,
-                rotate: 360,
-                scale: 1,
-                transition: { duration: 1, ease: "easeOut" }
-              }}
-              className="fixed text-6xl z-50 pointer-events-none"
+              opacity: 0,
+              y: leaf.y - 100,
+              rotate: 360,
+              scale: 1,
+              transition: { duration: 1, ease: "easeOut" }
+            }}
+            className="fixed text-6xl z-50 pointer-events-none"
           >
             🌿
           </motion.div>
         ))}
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
-        <header className="mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <motion.h1 
-              className="text-3xl font-bold text-gray-900"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-40">
+        <div className="h-full px-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden"
             >
-              Your Repositories
-            </motion.h1>
-            
-            <div className="flex items-center gap-4 w-full md:w-auto">
-              <div className="relative flex-1 md:w-64">
-                <Search 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
-                  size={18} 
-                />
-                <Input
-                  type="search"
-                  placeholder="Search repositories..."
-                  className="pl-10 w-full"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </Button>
+            <Github className="h-6 w-6" />
+            <h1 className="text-xl font-semibold hidden sm:block">Repository Dashboard</h1>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative w-64 hidden md:block">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <Input
+                type="search"
+                placeholder="Search repositories..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Filter size={18} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setFilter("all")}>
+                  All Repositories
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("public")}>
+                  Public Only
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter("private")}>
+                  Private Only
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <LogoutButton />
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="/api/placeholder/32/32" />
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+      </nav>
+
+      {/* Sidebar */}
+      <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 z-30`}>
+        <div className="flex flex-col h-full">
+          {/* Quick Stats Section */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Total Repositories</span>
+                <span className="font-medium">{repos.length}</span>
               </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Filter size={20} />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setFilter("all")}>
-                    All
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilter("public")}>
-                    Public
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilter("private")}>
-                    Private
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <LogoutButton />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Public</span>
+                <span className="font-medium">{repos.filter(r => r.visibility === 'public').length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Private</span>
+                <span className="font-medium">{repos.filter(r => r.visibility === 'private').length}</span>
+              </div>
             </div>
           </div>
-        </header>
 
-        <main>
+          {/* Recent Activity */}
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="text-sm font-medium text-gray-900 mb-3">Recent Activity</h3>
+            <div className="space-y-2">
+              {repos
+                .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+                .slice(0, 3)
+                .map(repo => (
+                  <Link 
+                    key={repo.id}
+                    href={`/dashboard/${repo.name}`}
+                    className="block p-2 hover:bg-gray-50 rounded-lg"
+                  >
+                    <div className="text-sm font-medium text-gray-900">{repo.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {formatTimeAgo(repo.updated_at)}
+                    </div>
+                  </Link>
+                ))}
+            </div>
+          </div>
+
+          {/* Languages Used */}
+          <div className="p-4">
+            <h3 className="text-sm font-medium text-gray-900 mb-3">Languages</h3>
+            <div className="space-y-2">
+              {Object.entries(
+                repos.reduce((acc, repo) => {
+                  if (repo.language) {
+                    acc[repo.language] = (acc[repo.language] || 0) + 1;
+                  }
+                  return acc;
+                }, {} as Record<string, number>)
+              )
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 5)
+                .map(([language, count]) => (
+                  <div key={language} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-sm text-gray-600">{language}</span>
+                    </div>
+                    <span className="text-xs text-gray-500">{count}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Create New Repository Button - Fixed at Bottom */}
+          <div className="mt-auto p-4 border-t border-gray-200">
+            <Button className="w-full gap-2">
+              <Plus size={16} />
+              New Repository
+            </Button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className={`pt-16 ${isSidebarOpen ? 'lg:pl-64' : ''} min-h-screen`}>
+        <div className="max-w-7xl mx-auto p-4 md:p-8">
           <AnimatePresence mode="wait">
             {error ? (
               <motion.div
@@ -476,10 +565,10 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }
               </div>
             )}
           </AnimatePresence>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };
 
-export default ClientDashboard;
+export default ModernDashboard;

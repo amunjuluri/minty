@@ -16,7 +16,7 @@ interface AnalysisChunk {
 }
 
 const MAX_TOKENS = 3000; // GPT-3.5 context limit
-const CHARS_PER_TOKEN = 4; // Average estimation
+const CHARS_PER_TOKEN = 1; // Average estimation
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
