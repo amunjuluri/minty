@@ -25,6 +25,7 @@ export interface GitHubRepository {
   stargazers_count: number;
   html_url: string;
   contents_url: string;
+  updated_at: string; 
 }
 
 export interface GitHubContent {
@@ -52,7 +53,12 @@ export interface GitHubSearchResponse {
 }
 
 export interface GitHubService {
-  listUserRepositories(): Promise<GitHubResponse<GitHubRepository[]>>;
+  listUserRepositories: () => Promise<GitHubServiceResponse>;
   getRepositoryContent(repoFullName: string): Promise<GitHubResponse<RepositoryContent>>;
   searchRepositories(query: string): Promise<GitHubResponse<GitHubRepository[]>>;
+}
+
+export interface GitHubServiceResponse {
+  data: GitHubRepository[] | null;
+  error: GitHubError | null;
 }
