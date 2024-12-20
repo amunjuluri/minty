@@ -32,7 +32,7 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
     }
 
     const data = (await response.json()) as ApiResponse<ProcessedContent[]>;
-
+    // console.log("bhai data value:", data);
     if (!data) {
       throw new Error("No repository data received");
     }
@@ -43,11 +43,7 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
           Repository Analysis: {repoName}
         </h1>
 
-        <AnalysisDisplay 
-          repoName={repoName}
-          baseUrl={baseUrl}
-          files={data}
-        />
+        <AnalysisDisplay repoName={repoName} baseUrl={baseUrl} files={data} />
       </div>
     );
   } catch (error) {
