@@ -2,38 +2,9 @@
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
-import type {
-  ProcessedContent,
-  AnalysisResult,
-  ApiResponse,
-} from "@/types/github";
+import type { ProcessedContent, ApiResponse } from "@/types/github";
 import type { Session } from "next-auth";
-// import { AnalysisDisplay } from "../../../components/AnalysisDisplay";
-// import { RepoContent } from "../../../components/RepoContent";
-
-async function analyzeRepository(
-  files: ProcessedContent[]
-): Promise<AnalysisResult[]> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-    const response = await fetch(`${baseUrl}/api/analyze`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        files,
-      }),
-    });
-    console.log("you reached analyzeRepository function");
-    const results = await response.json();
-    return results as AnalysisResult[];
-  } catch (error) {
-    console.error("Repository analysis failed:", error);
-    throw error;
-  }
-}
+import { AnalysisDisplay } from "@/components/analysisDisplay";
 
 async function RepoAnalysis({ repoName }: { repoName: string }) {
   try {
@@ -48,7 +19,6 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
       throw new Error("GitHub username not found in session");
     }
 
-    console.log("bhai reponame and token", repoName, session.accessToken);
     // Fetch repository content
     const response = await fetch(
       `${baseUrl}/api/repos/${repoName}?username=${session.user.username}&token=${session.accessToken}`,
@@ -62,14 +32,10 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
     }
 
     const data = (await response.json()) as ApiResponse<ProcessedContent[]>;
-    // console.log("bhai data value:", data);
 
     if (!data) {
       throw new Error("No repository data received");
     }
-
-    // Analyze repository
-    const analysisResults = await analyzeRepository(data);
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -77,11 +43,11 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
           Repository Analysis: {repoName}
         </h1>
 
-        {/* 
-        <AnalysisDisplay results={analysisResults} />
-
-
-        <RepoContent content={data} />  */}
+        <AnalysisDisplay 
+          repoName={repoName}
+          baseUrl={baseUrl}
+          files={data}
+        />
       </div>
     );
   } catch (error) {

@@ -1,18 +1,35 @@
-import { callAIService } from "./analyzeRepository";
+// lib/chunking/generatereadme.ts
+import { openai } from '@ai-sdk/openai';
+import { generateText } from 'ai';
+import type { AnalysisResult } from '@/types/github';
+
+// Initialize OpenAI provider
+const openaiProvider = openai('gpt-4o-mini');
+
 export async function generateReadme(
   analysisResults: AnalysisResult[]
 ): Promise<string> {
-  // Combine all analyses
-  const combinedAnalysis = {
-    architecture: analysisResults.map((r) => r.architecture).join("\n"),
-    dependencies: analysisResults.map((r) => r.dependencies).join("\n"),
-    functionality: analysisResults.map((r) => r.functionality).join("\n"),
-    codeQuality: analysisResults.map((r) => r.codeQuality).join("\n"),
-    improvements: analysisResults.map((r) => r.improvements).join("\n"),
-  };
+  try {
+    // Combine all analyses
+    const combinedAnalysis = {
+      architecture: analysisResults.map((r) => r.architecture).join("\n"),
+      dependencies: analysisResults.map((r) => r.dependencies).join("\n"),
+      functionality: analysisResults.map((r) => r.functionality).join("\n"),
+      codeQuality: analysisResults.map((r) => r.codeQuality).join("\n"),
+      improvements: analysisResults.map((r) => r.improvements).join("\n"),
+    };
 
-  // Generate final README prompt
-  const readmePrompt = `Based on the following comprehensive analysis, generate a detailed README.md:
+    // Generate README using AI SDK
+    const { text } = await generateText({
+      model: openaiProvider,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a technical documentation expert. Create a professional README.md based on the provided code analysis.',
+        },
+        {
+          role: 'user',
+          content: `Based on the following comprehensive analysis, generate a detailed README.md:
 
 Architecture Overview:
 ${combinedAnalysis.architecture}
@@ -36,8 +53,18 @@ Please create a professional README.md that includes:
 4. Usage
 5. Dependencies
 6. Contributing guidelines
-7. Future improvements`;
+7. Future improvements`,
+        },
+      ],
+      temperature: 0.3,
+      maxTokens: 2000, // Adjust based on your needs
+    });
 
-  // Generate README using AI
-  return await callAIService(readmePrompt);
+    return text;
+  } catch (error) {
+    console.error('Error generating README:', error);
+    return `# README Generation Error\n\nFailed to generate README: ${
+      error instanceof Error ? error.message : 'Unknown error'
+    }`;
+  }
 }

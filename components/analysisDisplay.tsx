@@ -1,81 +1,87 @@
-import { FC } from "react";
-import { AnalysisResult } from "@/types/github";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// components/AnalysisDisplay.tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 interface AnalysisDisplayProps {
-  results: AnalysisResult[];
+  repoName: string;
+  baseUrl: string;
+  files: any[];
 }
 
-export const AnalysisDisplay: FC<AnalysisDisplayProps> = ({ results }) => {
-  if (!results.length) {
-    return (
-      <Alert>
-        <AlertTitle>No Analysis Results</AlertTitle>
-        <AlertDescription>
-          No analysis results are available for this repository.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+export function AnalysisDisplay({ repoName, baseUrl, files }: AnalysisDisplayProps) {
+  const [analysisText, setAnalysisText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function streamAnalysis() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(`${baseUrl}/api/analyze`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ files }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Analysis request failed');
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('Failed to initialize stream reader');
+        }
+
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const text = decoder.decode(value, { stream: true });
+          setAnalysisText((prev) => prev + text);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    streamAnalysis();
+  }, [baseUrl, files]);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Analysis Results</h2>
-      {results.map((result, index) => (
-        <Card key={`${result.fileName}-${index}`}>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>{result.fileName}</span>
-              <Badge
-                variant={
-                  result.metrics.maintainability > 80
-                    ? "success"
-                    : result.metrics.maintainability > 60
-                    ? "warning"
-                    : "destructive"
-                }
-              >
-                Maintainability: {result.metrics.maintainability}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {result.suggestions.map((suggestion, sIndex) => (
-                <Alert
-                  key={sIndex}
-                  variant={
-                    suggestion.type === "error"
-                      ? "destructive"
-                      : suggestion.type === "warning"
-                      ? "warning"
-                      : "default"
-                  }
-                >
-                  <AlertTitle className="capitalize">
-                    {suggestion.type}
-                  </AlertTitle>
-                  <AlertDescription>
-                    {suggestion.message}
-                    {suggestion.line && (
-                      <span className="block text-sm mt-1">
-                        Line: {suggestion.line}
-                      </span>
-                    )}
-                    {suggestion.code && (
-                      <pre className="mt-2 p-2 bg-slate-100 rounded-md">
-                        <code>{suggestion.code}</code>
-                      </pre>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              ))}
+    <Card className="p-6 mt-8">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Repository Analysis</h2>
+          {loading && (
+            <div className="flex items-center text-gray-500">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Analyzing...
             </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+          )}
+        </div>
+
+        {error ? (
+          <div className="p-4 bg-red-50 text-red-600 rounded-md">
+            Error: {error}
+          </div>
+        ) : (
+          <div className="prose max-w-none">
+            <div className="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-md">
+              {analysisText || 'Waiting for analysis to begin...'}
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
   );
-};
+}
