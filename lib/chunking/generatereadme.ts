@@ -1,10 +1,10 @@
 // lib/chunking/generatereadme.ts
+// import { openai } from '@ai-sdk/openai';
 import { groq, createGroq } from '@ai-sdk/groq';
-// import { openai } from '@ai-sdk/openai'; // Uncomment for production
 import { generateText } from 'ai';
 import type { AnalysisResult } from '@/types/github';
 
-// Initialize Groq provider
+// // Initialize Groq provider
 const groqProvider = createGroq({
   apiKey: process.env.GROQ_API_KEY,
   headers: {
@@ -12,96 +12,108 @@ const groqProvider = createGroq({
   }
 });
 
-// Initialize providers
-// Production OpenAI provider (commented out)2
 // const openaiProvider = openai('gpt-4o-mini');
 
-// Development Groq provider
 const model = groqProvider('gemma2-9b-it');
 
 export async function generateReadme(
   analysisResults: AnalysisResult[]
 ): Promise<string> {
   try {
-    // Combine all analyses with proper type checking
-    const combinedAnalysis = analysisResults.reduce((acc, curr) => ({
-      architecture: `${acc.architecture}\n${curr.architecture || ''}`,
-      dependencies: `${acc.dependencies}\n${curr.dependencies || ''}`,
-      functionality: `${acc.functionality}\n${curr.functionality || ''}`,
-      codeQuality: `${acc.codeQuality}\n${curr.codeQuality || ''}`,
-      improvements: `${acc.improvements}\n${curr.improvements || ''}`
-    }), {
-      architecture: '',
-      dependencies: '',
-      functionality: '',
-      codeQuality: '',
-      improvements: ''
-    });
+    // Extract meaningful content from analysis results
+    const analysisContent = analysisResults
+      .map(result => {
+        // Remove headers and clean up content
+        return Object.values(result)
+          .map(value => (value || '')
+            .replace(/^# Repository Analysis/gm, '')
+            .replace(/^## Analysis of README\.md/gm, '')
+            .replace(/^# Analysis of README\.md/gm, '')
+            .replace(/\*\*Analysis of README\.md\*\*/g, '')
+            .trim())
+          .join('\n');
+      })
+      .join('\n')
+      .trim();
 
-    // Generate README using AI
     const { text } = await generateText({
-      // Production configuration (commented out)
-      // model: openaiProvider, // Uses gpt-4o-mini model
-      
-      // Development configuration
-      model, // Uses Groq's gemma2-9b-it model
+      // model: openaiProvider,
+      model,
       messages: [
         {
           role: 'system' as const,
-          content: `You are a technical documentation expert specialized in creating comprehensive README.md files. 
-          Focus on clarity, completeness, and professional formatting.`
+          content: `You are a technical documentation expert. Create a clean README.md file.
+          Important rules:
+          - Start directly with the project title
+          - Do NOT include any headers containing "Analysis", "Repository Analysis", or "Analysis of README"
+          - Use clear section headings starting with ##
+          - Format content professionally
+          - Focus on the actual project documentation
+          - Return only plain markdown without any JSON wrapping
+          - Do not repeat section titles
+          - Do not include raw analysis data`
         },
         {
           role: 'user' as const,
-          content: `Generate a detailed README.md based on this analysis:
+          content: `Using this project analysis, create a professional README.md:
 
-          Architecture Overview:
-          ${combinedAnalysis.architecture.trim()}
+${analysisContent}
 
-          Dependencies:
-          ${combinedAnalysis.dependencies.trim()}
+Include these sections:
+- Project Overview
+- Features
+- Installation
+- Usage
+- Contributing
+- License
 
-          Key Functionality:
-          ${combinedAnalysis.functionality.trim()}
-
-          Code Quality Analysis:
-          ${combinedAnalysis.codeQuality.trim()}
-
-          Suggested Improvements:
-          ${combinedAnalysis.improvements.trim()}
-
-          Include these sections:
-          1. Project Overview
-          2. Technical Architecture
-          3. Installation Guide
-          4. Usage Instructions
-          5. API Documentation
-          6. Dependencies List
-          7. Contributing Guidelines
-          8. Future Roadmap
-          9. License Information`
+Important:
+- Start with the project name as title
+- Do not include any analysis headers
+- Keep it clean and professional
+- Use proper markdown formatting`
         }
       ],
       temperature: 0.3,
       maxTokens: 2000,
     });
 
-    return text;
-  } catch (error) {
-    console.error('[README Generator] Error:', error);
-    
-    // Provide a fallback README with error details
-    return `# README Generation Error
+    // Cleanup the response
+    // Add these cleanup patterns
+const cleanedText = text
+// Remove JSON formatting
+.replace(/^\s*\{|\}\s*$/g, '')
+.replace(/"architecture"\s*:\s*"|"\s*,\s*".*?"\s*:\s*".*?"/g, '')
+// Remove trailing JSON artifacts
+.replace(/"\s*,\s*".*?"\s*:\s*".*?"\s*}/g, '')
+// Remove any remaining JSON quotes and commas
+.replace(/",\s*"/g, '\n')
+.replace(/^"|"$/g, '')
+// Clean up headers
+.replace(/^# Repository Analysis/gm, '')
+.replace(/^## Analysis/gm, '')
+.replace(/\*\*Analysis.*?\*\*/g, '')
+// Format newlines
+.replace(/\\n/g, '\n')
+.replace(/\n{3,}/g, '\n\n')
+.trim();
 
-## Error Details
-${error instanceof Error ? error.message : 'An unknown error occurred'}
-
-## Manual Steps
-1. Please review the analysis results manually
-2. Contact the development team if this error persists
-3. Check the application logs for more details
+    // Only add footer if we have content
+    if (cleanedText) {
+      return `${cleanedText}
 
 ---
-Generated with ❤️ by minty`;
+Generated with ❤️ by Minty Documentation Generator`;
+    }
+
+    throw new Error('No content generated');
+
+  } catch (error) {
+    console.error('[README Generator] Error:', error);
+    return `# README
+
+An error occurred while generating the README. Please try again.
+
+Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
   }
 }

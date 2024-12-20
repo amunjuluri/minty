@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
 import type { ProcessedContent, ApiResponse } from "@/types/github";
 import type { Session } from "next-auth";
-import { AnalysisDisplay } from "@/components/analysisDisplay";
+import { RepositoryOverview } from "@/components/RepositoryOverview";
 
 async function RepoAnalysis({ repoName }: { repoName: string }) {
   try {
@@ -39,19 +39,16 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
 
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">
-          Repository Analysis: {repoName}
-        </h1>
-
-        <AnalysisDisplay 
+        <RepositoryOverview 
           repoName={repoName}
           baseUrl={baseUrl}
           files={data}
+          session={session}
         />
       </div>
     );
   } catch (error) {
-    console.error("Error analyzing repository:", error);
+    console.error("Error fetching repository:", error);
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-md">
         <p className="text-red-600">Error: {(error as Error).message}</p>
