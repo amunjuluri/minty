@@ -145,12 +145,12 @@ const Home: NextPage = () => {
     {
       icon: Boxes,
       title: "Minimal Setup",
-      description: "Zero configuration needed. Just add your markdown files and let Minty handle the rest. No complex setup or configuration required."
+      description: "Start effortlessly—Minty handles everything for you, from fetching content to generating results. No complicated setup or configuration required."
     },
     {
       icon: GitBranch,
       title: "GitHub Integration",
-      description: "Seamlessly integrates with your GitHub workflow. Auto-updates when you push changes to your repository."
+      description: "Easily connects to your GitHub account, fetches repositories, analyzes content, and generates a README file that you can review and push back to your repository."
     }
   ];
 

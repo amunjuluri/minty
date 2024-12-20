@@ -1,5 +1,6 @@
 // lib/chunking/analyzeRepository.ts
-import { openai } from '@ai-sdk/openai';
+import { groq, createGroq } from '@ai-sdk/groq';
+// import { openai } from '@ai-sdk/openai'; // Uncomment for production
 import { streamText } from 'ai';
 import { createFileChunks } from "./fileChunker";
 import { createAnalysisChunks } from "./analysisChunker";
@@ -7,8 +8,20 @@ import { generateChunkPrompt } from "./promptGenerator";
 import { generateReadme } from "./generatereadme";
 import type { ProcessedContent, AnalysisResult, AnalysisChunk } from "../../types/github";
 
-// Initialize OpenAI provider
-const openaiProvider = openai('gpt-4o-mini');
+// Initialize Groq provider
+const groqProvider = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
+  headers: {
+    'x-custom-header': 'minty-analyzer'
+  }
+});
+
+// Initialize providers
+// Production OpenAI provider (commented out)
+// const openaiProvider = openai('gpt-4o-mini');
+
+// Development Groq provider
+const model = groqProvider('gemma2-9b-it');
 
 interface StreamAnalysisOptions {
   onChunkStart?: (chunkIndex: number, totalChunks: number) => void;
@@ -25,7 +38,11 @@ async function* processAnalysisStream(
 
   try {
     const { textStream } = await streamText({
-      model: openaiProvider,
+      // Production configuration (commented out)
+      // model: openaiProvider,
+      
+      // Development configuration
+      model, // Uses Groq's gemma2-9b-it model
       messages: [
         {
           role: 'system',
@@ -50,7 +67,7 @@ async function* processAnalysisStream(
       };
     }
   } catch (error) {
-    console.error('Streaming analysis failed:', error);
+    console.error('[Analysis Stream] Error:', error);
     throw error;
   }
 }
@@ -66,7 +83,6 @@ export async function analyzeRepositoryWithStreaming(
     const analyzedFiles = new Map<string, boolean>();
     
     const fileChunks = createFileChunks(files);
-    // Filter out duplicate files before creating analysis chunks
     const uniqueFileChunks = fileChunks.filter(chunk => {
       const key = chunk.path;
       if (analyzedFiles.has(key)) {
@@ -79,29 +95,23 @@ export async function analyzeRepositoryWithStreaming(
     const analysisChunks = createAnalysisChunks(uniqueFileChunks);
     const totalChunks = analysisChunks.length;
 
-    // Store analysis results for README generation
     const analysisResults: AnalysisResult[] = [];
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     const encoder = new TextEncoder();
 
-    // Process chunks and collect results
     (async () => {
       try {
-        // Header for the analysis
         await writer.write(encoder.encode('# Repository Analysis\n\n'));
 
-        // Process each chunk
         for (let i = 0; i < analysisChunks.length; i++) {
           const chunk = analysisChunks[i];
           onChunkStart?.(i, totalChunks);
 
-          // Add chunk information to the stream
           await writer.write(
             encoder.encode(`\n## Analyzing Files (Chunk ${i + 1}/${totalChunks})\n`)
           );
           
-          // List files being analyzed in this chunk
           const filesList = chunk.files
             .map(f => `- ${f.path}`)
             .join('\n');
@@ -114,7 +124,6 @@ export async function analyzeRepositoryWithStreaming(
               chunkResult = accumulated;
             }
 
-            // Store chunk result for README
             const result: AnalysisResult = {
               architecture: chunkResult,
               dependencies: '',
@@ -136,14 +145,13 @@ export async function analyzeRepositoryWithStreaming(
           }
         }
 
-        // Generate and append README
         await writer.write(encoder.encode('\n\n# Generated README\n\n'));
         const readme = await generateReadme(analysisResults);
         await writer.write(encoder.encode(readme));
 
         await writer.close();
       } catch (error) {
-        console.error('Fatal error in analysis stream:', error);
+        console.error('[Analysis Stream] Fatal error:', error);
         await writer.abort(error);
       }
     })();
@@ -156,7 +164,7 @@ export async function analyzeRepositoryWithStreaming(
       },
     });
   } catch (error) {
-    console.error('Repository analysis failed:', error);
+    console.error('[Repository Analysis] Failed:', error);
     throw new Error(
       'Failed to analyze repository: ' +
       (error instanceof Error ? error.message : 'Unknown error')

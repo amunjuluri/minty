@@ -405,7 +405,7 @@ const ModernDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
             <Github className="h-6 w-6" />
-            <h1 className="text-xl font-semibold hidden sm:block">Repository Dashboard</h1>
+            <h1 className="text-xl font-semibold hidden sm:block bg-gradient-to-r from-green-600 via-green-500 to-green-600 bg-clip-text text-transparent leading-normal">minty</h1>
           </div>
 
           <div className="flex items-center gap-4">
@@ -438,10 +438,7 @@ const ModernDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }
               </DropdownMenuContent>
             </DropdownMenu>
             <LogoutButton />
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="/api/placeholder/32/32" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
+            
           </div>
         </div>
       </nav>
@@ -517,10 +514,7 @@ const ModernDashboard: React.FC<ClientDashboardProps> = ({ initialRepos, error }
 
           {/* Create New Repository Button - Fixed at Bottom */}
           <div className="mt-auto p-4 border-t border-gray-200">
-            <Button className="w-full gap-2">
-              <Plus size={16} />
-              New Repository
-            </Button>
+           
           </div>
         </div>
       </aside>

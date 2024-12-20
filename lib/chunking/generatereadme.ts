@@ -1,70 +1,107 @@
 // lib/chunking/generatereadme.ts
-import { openai } from '@ai-sdk/openai';
+import { groq, createGroq } from '@ai-sdk/groq';
+// import { openai } from '@ai-sdk/openai'; // Uncomment for production
 import { generateText } from 'ai';
 import type { AnalysisResult } from '@/types/github';
 
-// Initialize OpenAI provider
-const openaiProvider = openai('gpt-4o-mini');
+// Initialize Groq provider
+const groqProvider = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
+  headers: {
+    'x-custom-header': 'minty-docs-generator'
+  }
+});
+
+// Initialize providers
+// Production OpenAI provider (commented out)2
+// const openaiProvider = openai('gpt-4o-mini');
+
+// Development Groq provider
+const model = groqProvider('gemma2-9b-it');
 
 export async function generateReadme(
   analysisResults: AnalysisResult[]
 ): Promise<string> {
   try {
-    // Combine all analyses
-    const combinedAnalysis = {
-      architecture: analysisResults.map((r) => r.architecture).join("\n"),
-      dependencies: analysisResults.map((r) => r.dependencies).join("\n"),
-      functionality: analysisResults.map((r) => r.functionality).join("\n"),
-      codeQuality: analysisResults.map((r) => r.codeQuality).join("\n"),
-      improvements: analysisResults.map((r) => r.improvements).join("\n"),
-    };
+    // Combine all analyses with proper type checking
+    const combinedAnalysis = analysisResults.reduce((acc, curr) => ({
+      architecture: `${acc.architecture}\n${curr.architecture || ''}`,
+      dependencies: `${acc.dependencies}\n${curr.dependencies || ''}`,
+      functionality: `${acc.functionality}\n${curr.functionality || ''}`,
+      codeQuality: `${acc.codeQuality}\n${curr.codeQuality || ''}`,
+      improvements: `${acc.improvements}\n${curr.improvements || ''}`
+    }), {
+      architecture: '',
+      dependencies: '',
+      functionality: '',
+      codeQuality: '',
+      improvements: ''
+    });
 
-    // Generate README using AI SDK
+    // Generate README using AI
     const { text } = await generateText({
-      model: openaiProvider,
+      // Production configuration (commented out)
+      // model: openaiProvider, // Uses gpt-4o-mini model
+      
+      // Development configuration
+      model, // Uses Groq's gemma2-9b-it model
       messages: [
         {
-          role: 'system',
-          content: 'You are a technical documentation expert. Create a professional README.md based on the provided code analysis.',
+          role: 'system' as const,
+          content: `You are a technical documentation expert specialized in creating comprehensive README.md files. 
+          Focus on clarity, completeness, and professional formatting.`
         },
         {
-          role: 'user',
-          content: `Based on the following comprehensive analysis, generate a detailed README.md:
+          role: 'user' as const,
+          content: `Generate a detailed README.md based on this analysis:
 
-Architecture Overview:
-${combinedAnalysis.architecture}
+          Architecture Overview:
+          ${combinedAnalysis.architecture.trim()}
 
-Dependencies:
-${combinedAnalysis.dependencies}
+          Dependencies:
+          ${combinedAnalysis.dependencies.trim()}
 
-Key Functionality:
-${combinedAnalysis.functionality}
+          Key Functionality:
+          ${combinedAnalysis.functionality.trim()}
 
-Code Quality:
-${combinedAnalysis.codeQuality}
+          Code Quality Analysis:
+          ${combinedAnalysis.codeQuality.trim()}
 
-Potential Improvements:
-${combinedAnalysis.improvements}
+          Suggested Improvements:
+          ${combinedAnalysis.improvements.trim()}
 
-Please create a professional README.md that includes:
-1. Project overview
-2. Architecture
-3. Installation
-4. Usage
-5. Dependencies
-6. Contributing guidelines
-7. Future improvements`,
-        },
+          Include these sections:
+          1. Project Overview
+          2. Technical Architecture
+          3. Installation Guide
+          4. Usage Instructions
+          5. API Documentation
+          6. Dependencies List
+          7. Contributing Guidelines
+          8. Future Roadmap
+          9. License Information`
+        }
       ],
       temperature: 0.3,
-      maxTokens: 2000, // Adjust based on your needs
+      maxTokens: 2000,
     });
 
     return text;
   } catch (error) {
-    console.error('Error generating README:', error);
-    return `# README Generation Error\n\nFailed to generate README: ${
-      error instanceof Error ? error.message : 'Unknown error'
-    }`;
+    console.error('[README Generator] Error:', error);
+    
+    // Provide a fallback README with error details
+    return `# README Generation Error
+
+## Error Details
+${error instanceof Error ? error.message : 'An unknown error occurred'}
+
+## Manual Steps
+1. Please review the analysis results manually
+2. Contact the development team if this error persists
+3. Check the application logs for more details
+
+---
+Generated with ❤️ by minty`;
   }
 }
