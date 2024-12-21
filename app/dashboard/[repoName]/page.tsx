@@ -47,10 +47,10 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Link>
-        <RepositoryOverview 
+        <RepositoryOverview
           repoName={repoName}
           baseUrl={baseUrl}
-          files={data}
+          files={data?.data || []}
           session={session}
         />
       </div>

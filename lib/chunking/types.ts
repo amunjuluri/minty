@@ -1,18 +1,4 @@
-interface FileChunk {
-  type: "code" | "config" | "documentation" | "asset";
-  content: string;
-  path: string;
-  size: number;
-  language?: string;
-}
-
-interface AnalysisChunk {
-  files: FileChunk[];
-  totalSize: number;
-  maxTokens: number;
-  context: string;
-}
-
+import { FileChunk, AnalysisChunk, ProcessedContent } from "@/types/github";
 function determineFileType(path: string, content: string): FileChunk["type"] {
   if (path.endsWith(".md") || path.endsWith(".txt")) return "documentation";
   if (path.endsWith(".json") || path.endsWith(".yaml") || path.endsWith(".env"))

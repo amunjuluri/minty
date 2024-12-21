@@ -1,14 +1,51 @@
-// types/github.ts (not .d.ts)
-// export interface GitHubError {
-//   message: string;
-//   documentation_url?: string;
-//   status?: number;
-// }
+// types/github.ts
 
-// export interface GitHubResponse<T> {
-//   data: T | null;
-//   error: GitHubError | null;
-// }
+// Base content type that both FileChunk and ProcessedContent extend
+interface BaseContent {
+  path: string;
+  size?: number;
+  content?: string;
+  language?: string;
+}
+
+// ProcessedContent represents the initial file data
+export interface ProcessedContent extends BaseContent {
+  type: "file" | "directory";
+  children?: ProcessedContent[];
+}
+
+// FileChunk represents a processed chunk of file content
+export interface FileChunk extends BaseContent {
+  type: string;
+  tokens?: number;
+  chunkIndex?: number;
+  isPartialChunk?: boolean;
+  totalChunks?: number;
+}
+
+// Type guards for type checking
+export function isProcessedContent(
+  content: BaseContent
+): content is ProcessedContent {
+  return (
+    (content as ProcessedContent).type === "file" ||
+    (content as ProcessedContent).type === "directory"
+  );
+}
+
+export function isFileChunk(content: BaseContent): content is FileChunk {
+  return !!(content as FileChunk).chunkIndex !== undefined;
+}
+export interface GitHubError {
+  message: string;
+  documentation_url?: string;
+  status?: number;
+}
+
+export interface GitHubResponse<T> {
+  data: T | null;
+  error: GitHubError | null;
+}
 
 export interface GitHubRepository {
   id: number;
@@ -25,21 +62,30 @@ export interface GitHubRepository {
   stargazers_count: number;
   html_url: string;
   contents_url: string;
-  updated_at: string; 
+  updated_at: string;
 }
 
-// export interface GitHubContent {
-//   type: "file" | "dir" | "symlink" | "submodule";
-//   name: string;
-//   path: string;
-//   content?: string;
-//   encoding?: string;
-//   size: number;
-//   sha: string;
-//   url: string;
-//   html_url: string;
-//   download_url: string | null;
-// }
+export interface GitHubContent {
+  type: "file" | "dir" | "symlink" | "submodule";
+  name: string;
+  path: string;
+  content?: string;
+  encoding?: string;
+  size: number;
+  sha: string;
+  url: string;
+  html_url: string;
+  download_url: string | null;
+}
+
+export interface ProcessedContent {
+  path: string;
+  type: "file" | "directory";
+  content?: string;
+  size?: number;
+  language?: string;
+  children?: ProcessedContent[];
+}
 
 export interface RepositoryContent {
   owner: string;
@@ -50,39 +96,6 @@ export interface GitHubSearchResponse {
   total_count: number;
   incomplete_results: boolean;
   items: GitHubRepository[];
-}
-
-// export interface GitHubService {
-//   listUserRepositories(): Promise<GitHubResponse<GitHubRepository[]>>;
-//   getRepositoryContent(repoFullName: string): Promise<GitHubResponse<RepositoryContent>>;
-//   searchRepositories(query: string): Promise<GitHubResponse<GitHubRepository[]>>;
-// }
-// types/github.ts
-
-export interface GitHubError {
-  message: string;
-  status?: number;
-}
-
-export interface GitHubResponse<T> {
-  data: T | null;
-  error: GitHubError | null;
-}
-
-export interface GitHubContent {
-  type: "file" | "dir";
-  name: string;
-  path: string;
-  sha: string;
-  size?: number;
-  content?: string;
-  download_url?: string;
-}
-
-export interface ProcessedContent {
-  path: string;
-  content: string | null;
-  type: "file" | "dir";
 }
 
 export interface GitHubService {
@@ -98,38 +111,6 @@ export interface GitHubService {
   getAllRepositoryContents(
     fullRepoName: string
   ): Promise<GitHubResponse<ProcessedContent[]>>;
-}
-// types/github.ts
-
-export interface ProcessedContent {
-  path: string;
-  type: "file" | "dir";
-  content: string | null; // Updated to allow null values
-  language?: string;
-  size?: number;
-}
-
-export interface AnalysisResult {
-  architecture: string;
-  dependencies: string;
-  functionality: string;
-  codeQuality: string;
-  improvements: string;
-}
-
-export interface AnalysisChunk {
-  files: ProcessedContent[];
-  context: {
-    totalFiles: number;
-    chunkIndex: number;
-    totalChunks: number;
-  };
-}
-
-// Add type safety for API responses
-export interface ApiResponse<T> {
-  data?: T;
-  error?: string;
 }
 
 export interface AnalysisResult {
@@ -147,11 +128,58 @@ export interface AnalysisResult {
   };
 }
 
+// Update interfaces to match expected types
+export interface StreamOptions {
+  onChunkStart?: (chunkIndex: number, totalChunks: number) => void;
+  onChunkComplete?: (chunkIndex: number, result: AnalysisResult) => void;
+  onProgress?: (progress: number) => void;
+}
+
+export interface StreamResult {
+  text: string;
+  accumulated: string;
+  done: boolean;
+}
+
+export interface AnalysisMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+// Update ProcessedContent type if not already defined in github.ts
 export interface ProcessedContent {
   path: string;
   type: "file" | "directory";
   content?: string;
   size?: number;
-  language?: string;
-  children?: ProcessedContent[];
+}
+
+// Update AnalysisResult interface
+export interface ExtendedAnalysisResult extends AnalysisResult {
+  architecture: string;
+  dependencies: string;
+  functionality: string;
+  codeQuality: string;
+  improvements: string;
+}
+
+// Define enhanced chunk type
+export interface EnhancedAnalysisChunk extends AnalysisChunk {
+  totalSize: number;
+  maxTokens: number;
+  files: ProcessedContent[];
+}
+
+export interface AnalysisChunk {
+  files: ProcessedContent[];
+  context: {
+    totalFiles: number;
+    chunkIndex: number;
+    totalChunks: number;
+  };
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: string;
 }

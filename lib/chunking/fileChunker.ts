@@ -89,7 +89,7 @@ function determineLanguage(path: string): string | undefined {
     ".yml": "YAML",
     ".toml": "TOML",
     ".csv": "CSV",
-    ".xml": "XML",
+    // ".xml": "XML",
 
     // Documentation
     ".md": "Markdown",

@@ -3,6 +3,7 @@ interface FileChunk {
   type: string;
   path: string;
   size: number;
+  tokens?: number; // Added tokens as optional
   chunkIndex?: number;
   isPartialChunk?: boolean;
   totalChunks?: number;
@@ -15,8 +16,8 @@ interface AnalysisChunk {
   context: string;
 }
 
-const MAX_TOKENS = 3000; // GPT-3.5 context limit
-const CHARS_PER_TOKEN = 1; // Average estimation
+const MAX_TOKENS = 3000;
+const CHARS_PER_TOKEN = 1;
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
@@ -31,34 +32,32 @@ function splitLargeFile(file: FileChunk): FileChunk[] {
   const totalChunks = Math.ceil(totalTokens / MAX_TOKENS);
 
   while (content.length > 0) {
-    // Calculate chunk size based on tokens
     const maxChars = MAX_TOKENS * CHARS_PER_TOKEN;
     const chunkSize = Math.min(maxChars, content.length);
 
-    // Find a clean break point
     let splitPoint = chunkSize;
     if (chunkSize < content.length) {
-      // Try to split at semantic boundaries in order of preference
       const boundaries = [
-        content.lastIndexOf("\n\n", chunkSize), // Prefer paragraph breaks
-        content.lastIndexOf("\n", chunkSize), // Then line breaks
-        content.lastIndexOf(". ", chunkSize), // Then sentences
-        content.lastIndexOf(" ", chunkSize), // Finally word breaks
+        content.lastIndexOf("\n\n", chunkSize),
+        content.lastIndexOf("\n", chunkSize),
+        content.lastIndexOf(". ", chunkSize),
+        content.lastIndexOf(" ", chunkSize),
       ];
 
-      const validBoundary = boundaries.find((b) => b > chunkSize * 0.75); // Ensure chunk is at least 75% full
+      const validBoundary = boundaries.find((b) => b > chunkSize * 0.75);
       if (validBoundary !== undefined) {
         splitPoint = validBoundary;
       }
     }
 
     const chunkContent = content.slice(0, splitPoint);
+    const calculatedTokens = estimateTokens(chunkContent);
 
     chunks.push({
       ...file,
       content: chunkContent,
       size: chunkContent.length,
-      tokens: estimateTokens(chunkContent),
+      tokens: calculatedTokens, // Added token calculation
       chunkIndex,
       isPartialChunk: totalChunks > 1,
       totalChunks,
@@ -71,33 +70,40 @@ function splitLargeFile(file: FileChunk): FileChunk[] {
 
   return chunks;
 }
+
 export function createAnalysisChunks(files: FileChunk[]): AnalysisChunk[] {
   const chunks: AnalysisChunk[] = [];
+  const groupedFiles = files.reduce<Record<string, FileChunk[]>>(
+    (acc, file) => {
+      const directory = file.path.split("/").slice(0, -1).join("/");
+      const key = `${directory}:${file.type}`;
+      acc[key] = acc[key] || [];
 
-  // Group files by type and directory
-  const groupedFiles = files.reduce((acc, file) => {
-    const directory = file.path.split("/").slice(0, -1).join("/");
-    const key = `${directory}:${file.type}`;
-    acc[key] = acc[key] || [];
-
-    // Split large files before grouping
-    if (estimateTokens(file.content) > MAX_TOKENS) {
-      acc[key].push(...splitLargeFile(file));
-    } else {
-      acc[key].push(file);
-    }
-    return acc;
-  }, {} as Record<string, FileChunk[]>);
+      if (estimateTokens(file.content) > MAX_TOKENS) {
+        acc[key].push(...splitLargeFile(file));
+      } else {
+        const fileWithTokens = {
+          ...file,
+          tokens: estimateTokens(file.content),
+        };
+        acc[key].push(fileWithTokens);
+      }
+      return acc;
+    },
+    {}
+  );
 
   let currentChunk: AnalysisChunk = createNewChunk();
 
-  // Process each group to keep related files together
   Object.entries(groupedFiles).forEach(([groupKey, groupFiles]) => {
-    // Sort files to keep related files together
     const sortedFiles = groupFiles.sort((a, b) => {
-      // Keep chunks of the same file together
-      if (a.isPartialChunk && b.isPartialChunk) {
-        return a.chunkIndex! - b.chunkIndex!;
+      if (
+        a.isPartialChunk &&
+        b.isPartialChunk &&
+        a.chunkIndex !== undefined &&
+        b.chunkIndex !== undefined
+      ) {
+        return a.chunkIndex - b.chunkIndex;
       }
       return a.path.localeCompare(b.path);
     });
@@ -105,9 +111,7 @@ export function createAnalysisChunks(files: FileChunk[]): AnalysisChunk[] {
     sortedFiles.forEach((file) => {
       const fileTokens = file.tokens ?? estimateTokens(file.content);
 
-      // Check if adding this file would exceed token limit
       if (currentChunk.totalTokens + fileTokens > MAX_TOKENS) {
-        // First try to optimize current chunk
         if (optimizeChunk(currentChunk)) {
           chunks.push(currentChunk);
           currentChunk = createNewChunk();
@@ -116,13 +120,10 @@ export function createAnalysisChunks(files: FileChunk[]): AnalysisChunk[] {
 
       currentChunk.files.push(file);
       currentChunk.totalTokens += fileTokens;
-
-      // Update context with file relationship info
       updateChunkContext(currentChunk, file, groupKey);
     });
   });
 
-  // Add the last chunk if it has files
   if (currentChunk.files.length > 0) {
     optimizeChunk(currentChunk);
     chunks.push(currentChunk);
@@ -141,10 +142,7 @@ function createNewChunk(): AnalysisChunk {
 }
 
 function optimizeChunk(chunk: AnalysisChunk): boolean {
-  // Try to optimize chunk if it's too large
   if (chunk.totalTokens > MAX_TOKENS) {
-    // Implement optimization strategies like removing comments
-    // or splitting at logical boundaries
     return true;
   }
   return false;
@@ -155,15 +153,18 @@ function updateChunkContext(
   file: FileChunk,
   groupKey: string
 ): void {
-  const contextParts = [];
+  const contextParts: string[] = [];
 
-  if (file.isPartialChunk) {
+  if (
+    file.isPartialChunk &&
+    file.chunkIndex !== undefined &&
+    file.totalChunks !== undefined
+  ) {
     contextParts.push(
-      `Part ${file.chunkIndex! + 1} of ${file.totalChunks} of ${file.path}`
+      `Part ${file.chunkIndex + 1} of ${file.totalChunks} of ${file.path}`
     );
   }
 
-  // Add directory context
   const [directory] = groupKey.split(":");
   if (directory) {
     contextParts.push(`Directory: ${directory}`);

@@ -1,5 +1,11 @@
+import {
+  ProcessedContent,
+  AnalysisChunk,
+  EnhancedAnalysisChunk,
+} from "@/types/github";
+
 export function generateChunkPrompt(
-  chunk: AnalysisChunk,
+  chunk: EnhancedAnalysisChunk,
   chunkIndex: number,
   totalChunks: number
 ): string {
