@@ -1,3 +1,10 @@
+//TODO: 
+//1. md filedownload
+//2. ui - minting, instructions on left side on dashboard, ui screenshots in landing, upvote on peerlist
+//3 - ts errors
+//4- deploy
+//5- seo optimization
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

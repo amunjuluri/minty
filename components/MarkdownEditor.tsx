@@ -1,13 +1,10 @@
-// components/MarkdownEditor.tsx
-'use client';
-
 import { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Download } from "lucide-react";
 import { toast, Toaster } from 'sonner';
 import remarkGfm from 'remark-gfm';
 
@@ -32,55 +29,50 @@ export function MarkdownEditor({
     onChange(newValue);
   }, [onChange]);
 
-  const saveChanges = async () => {
-    setIsSaving(true);
-    setError(null);
-
+  const downloadReadme = useCallback(() => {
     try {
-      const response = await fetch(`/api/repos/${repoName}/readme`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save README');
-      }
-
-      toast.success('Changes saved', {
-        description: 'Your README has been updated successfully.'
+      // Create blob from content
+      const blob = new Blob([content], { type: 'text/markdown' });
+      // Create URL for blob
+      const url = URL.createObjectURL(blob);
+      // Create temporary link element
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'README.md';
+      // Append to document, click, and cleanup
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      // Revoke URL to free up memory
+      URL.revokeObjectURL(url);
+      
+      toast.success('Download started', {
+        description: 'Your README.md file is being downloaded.'
       });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save changes';
-      setError(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to download file';
       toast.error('Error', {
-        description: 'Failed to save changes. Please try again.'
+        description: errorMessage
       });
-    } finally {
-      setIsSaving(false);
     }
-  };
+  }, [content]);
 
+  
   return (
     <div className="h-full flex flex-col bg-background">
       <Toaster position="top-right" expand={true} richColors />
       <div className="border-b p-4 flex justify-between items-center bg-card">
         <h2 className="text-xl font-semibold">Editing README.md</h2>
-        <Button onClick={saveChanges} disabled={isSaving}>
-          {isSaving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              Save Changes
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={downloadReadme}
+            className="bg-background hover:bg-secondary"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </Button>
+        </div>
       </div>
 
       {error && (
