@@ -1,7 +1,8 @@
-// app/dashboard/[repoName]/page.tsx
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
+import Link from "next/link"; // Add this import
+import { ArrowLeft } from "lucide-react"; // Add this import
 import type { ProcessedContent, ApiResponse } from "@/types/github";
 import type { Session } from "next-auth";
 import { RepositoryOverview } from "@/components/RepositoryOverview";
@@ -39,6 +40,13 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
 
     return (
       <div className="container mx-auto px-4 py-8">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center mb-6 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Link>
         <RepositoryOverview 
           repoName={repoName}
           baseUrl={baseUrl}
@@ -51,6 +59,13 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
     console.error("Error fetching repository:", error);
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center mb-4 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Link>
         <p className="text-red-600">Error: {(error as Error).message}</p>
       </div>
     );
