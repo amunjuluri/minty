@@ -51,18 +51,19 @@ export async function POST(request: NextRequest) {
 
     // Return JSON response that matches the expected format
     return new Response(
-      JSON.stringify([
-        {
-          architecture: analysisText,
-          dependencies: "",
-          functionality: "",
-          codeQuality: "",
-          improvements: "",
-        },
-      ]),
+      // JSON.stringify([
+      //   {
+      analysisText,
+      // dependencies: "",
+      // functionality: "",
+      // codeQuality: "",
+      // improvements: "",
+      // },
+      // ]
+
       {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "text/plain",
         },
       }
     );
