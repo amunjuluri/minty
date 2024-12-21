@@ -3,6 +3,7 @@ import type { NextPage } from 'next';
 import { useRouter } from 'next/navigation';
 import { motion, Variants } from "framer-motion";
 import { Github, ArrowRight, Book, Boxes, GitBranch, LucideIcon, Sparkles } from "lucide-react";
+import Image from 'next/image'
 
 interface FeatureCardProps {
   icon: LucideIcon;
@@ -238,10 +239,9 @@ const Home: NextPage = () => {
 
             {/* CTA Buttons */}
             <motion.div 
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-              variants={fadeInVariants}
-              custom={1.1}
-            >
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            variants={fadeInVariants}
+            custom={1.1}>
               <motion.button 
                 onClick={handleClick}
                 variants={buttonVariants}
@@ -270,6 +270,37 @@ const Home: NextPage = () => {
               </motion.button>
             </motion.div>
           </motion.div>
+
+          {/* Replace the existing Peerlist section with this enhanced version */}
+        <motion.div
+          className="max-w-lg mx-auto mt-12 mb-20"
+          variants={fadeInVariants}
+          initial="hidden"
+          animate="visible"
+          custom={1.3}
+        >
+          <motion.div 
+            className="flex flex-col items-center gap-2"
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 400 }}
+          >
+            <span className="text-sm text-gray-500 font-medium tracking-wide">Featured on</span>
+            <div className="flex items-center gap-2 bg-white/50 px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="rounded-lg overflow-hidden">
+                <Image
+                  src="/peerlist-logo.png" 
+                  alt="Peerlist"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 transform hover:scale-105 transition-transform"
+                />
+              </div>
+              <span className="text-lg  font-[400] font-['__Inter_6ac6f9'] bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+        Peerlist
+      </span>
+            </div>
+          </motion.div>
+        </motion.div>
 
           {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
