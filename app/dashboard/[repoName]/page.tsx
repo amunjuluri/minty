@@ -34,6 +34,7 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
 
     const data = (await response.json()) as ApiResponse<ProcessedContent[]>;
     // console.log("bhai data value:", data);
+    // const data2 = data;
     if (!data) {
       throw new Error("No repository data received");
     }
@@ -50,7 +51,7 @@ async function RepoAnalysis({ repoName }: { repoName: string }) {
         <RepositoryOverview
           repoName={repoName}
           baseUrl={baseUrl}
-          files={data?.data || []}
+          files={data}
           session={session}
         />
       </div>

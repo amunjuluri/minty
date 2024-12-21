@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { files } = body;
+    console.log("is there anything in fielsf", files);
     console.log("man here are your so called usefull files", files.fullContent);
     // Validate the input structure
     if (!files || !files.fullContent || !Array.isArray(files.fullContent)) {

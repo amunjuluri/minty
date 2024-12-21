@@ -1,7 +1,17 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+interface Repository {
+  id: string;
+  name: string;
+  description: string;
+  // Add other repository properties as needed
+}
 
+interface RepositoryCardProps {
+  repo: Repository;
+  index: number;
+}
 const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, index }) => {
   const [celebration, setCelebration] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);

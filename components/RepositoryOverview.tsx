@@ -90,6 +90,7 @@ export function RepositoryOverview({
     setAnalysisProgress("");
 
     try {
+      console.log("here are the files value in  repositoryoverview", files);
       const response = await fetch(`${baseUrl}/api/analyze`, {
         method: "POST",
         headers: {

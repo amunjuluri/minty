@@ -103,7 +103,7 @@ export async function analyzeRepositoryWithStreaming(
   options: StreamOptions = {}
 ): Promise<Response> {
   const { onChunkStart, onChunkComplete, onProgress } = options;
-
+  // console.log("analyze repository fiels value", files);
   try {
     const analysisChunks = await prepareAnalysisChunks(files);
     const totalChunks = analysisChunks.length;

@@ -20,18 +20,19 @@ export async function generateReadme(
   analysisResults: AnalysisResult[]
 ): Promise<string> {
   try {
+    console.log("in generate readme ", analysisResults);
     // Extract meaningful content from analysis results
     const analysisContent = analysisResults
       .map((result) => {
         // Remove headers and clean up content
         return Object.values(result)
-          .map((value) =>
-            (value || "")
-              .replace(/^# Repository Analysis/gm, "")
-              .replace(/^## Analysis of README\.md/gm, "")
-              .replace(/^# Analysis of README\.md/gm, "")
-              .replace(/\*\*Analysis of README\.md\*\*/g, "")
-              .trim()
+          .map(
+            (value) => value
+            // .replace(/^# Repository Analysis/gm, "")
+            // .replace(/^## Analysis of README\.md/gm, "")
+            // .replace(/^# Analysis of README\.md/gm, "")
+            // .replace(/\*\*Analysis of README\.md\*\*/g, "")
+            // .trim()
           )
           .join("\n");
       })
