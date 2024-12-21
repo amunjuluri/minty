@@ -5,6 +5,10 @@ import { motion, Variants } from "framer-motion";
 import { Github, ArrowRight, Book, Boxes, GitBranch, LucideIcon, Sparkles } from "lucide-react";
 import Image from 'next/image'
 
+const handleDemoClick = () => {
+  window.open('https://www.loom.com/share/b7a056a8f40c4e8e8e8f1bf176f0286f?sid=d3f99aa8-2371-4a37-bf4d-28bcd7a0c1a4', '_blank', 'noopener,noreferrer');
+ };
+
 interface FeatureCardProps {
   icon: LucideIcon;
   title: string;
@@ -263,6 +267,7 @@ const Home: NextPage = () => {
                 whileHover="hover"
                 whileTap="tap"
                 type="button"
+                onClick={handleDemoClick}
                 className="px-8 py-4 text-green-600 hover:text-green-700 rounded-xl font-medium transition-colors flex items-center gap-2"
               >
                 Live Demo
