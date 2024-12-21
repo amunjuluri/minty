@@ -65,7 +65,7 @@ export function AnalysisDisplay({ repoName, baseUrl, files }: AnalysisDisplayPro
           {loading && (
             <div className="flex items-center text-gray-500">
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Analyzing...
+              minting fresh docs...
             </div>
           )}
         </div>

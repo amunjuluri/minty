@@ -242,7 +242,7 @@ export function RepositoryOverview({
               {isAnalyzing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing Repository...
+                  minting fresh docs...
                 </>
               ) : (
                 'Generate README Analysis'
