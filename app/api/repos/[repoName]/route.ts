@@ -1,4 +1,3 @@
-// app/api/repos/[repoName]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createGitHubService } from "@/lib/github";
 
@@ -30,29 +29,43 @@ export async function GET(request: NextRequest, props: RouteParams) {
     // Get repoName from route parameter
     const resolvedParams = await props.params;
     const repoName = resolvedParams.repoName;
-
-    // Create GitHub service and fetch repository content
-    const githubService = createGitHubService(token);
     const repoFullName = `${username}/${repoName}`;
-    console.log("aaaaaaaaaaaa", repoFullName);
-    const response = await githubService.getAllRepositoryContents(repoFullName);
 
-    if (response.error) {
+    // Create GitHub service
+    const githubService = createGitHubService(token);
+
+    // First, check if the repository exists and is accessible
+    const repoCheck = await githubService.getRepositoryContent(repoFullName);
+    if (repoCheck.error) {
       return NextResponse.json(
-        { error: response.error.message },
-        { status: response.error.status || 500 }
+        { error: repoCheck.error.message },
+        { status: repoCheck.error.status || 404 }
       );
     }
 
-    if (!response.data) {
-      return NextResponse.json({ error: "No content found" }, { status: 404 });
+    // Get all repository contents
+    const contentsResult = await githubService.getAllRepositoryContents(
+      repoFullName
+    );
+
+    if (contentsResult.error) {
+      return NextResponse.json(
+        { error: contentsResult.error.message },
+        { status: contentsResult.error.status || 500 }
+      );
     }
 
-    return NextResponse.json(response.data);
+    return NextResponse.json({
+      initialContent: repoCheck.data,
+      fullContent: contentsResult.data,
+    });
   } catch (error) {
     console.error("Error in GitHub API route:", error);
     return NextResponse.json(
-      { error: "Failed to fetch repository content" },
+      {
+        error: "Failed to fetch repository content",
+        details: error instanceof Error ? error.message : undefined,
+      },
       { status: 500 }
     );
   }
