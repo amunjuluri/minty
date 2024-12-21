@@ -1,13 +1,86 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Star } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import confetti from "canvas-confetti";
 
-const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, index }) => {
+// Define the Repository interface
+interface Repository {
+  name: string;
+  visibility: "public" | "private";
+  description: string | null;
+  language: string | null;
+  stargazers_count: number;
+  updated_at: string;
+}
+
+// Define the RepositoryCardProps interface
+interface RepositoryCardProps {
+  repo: Repository;
+  index: number;
+}
+
+// Helper function for formatting time
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60,
+  } as const;
+
+  for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+    const interval = Math.floor(seconds / secondsInUnit);
+    if (interval >= 1) {
+      return `Updated ${interval} ${unit}${interval !== 1 ? 's' : ''} ago`;
+    }
+  }
+
+  return 'Updated just now';
+};
+
+// LoadingOverlay Component
+export const LoadingOverlay: React.FC = () => {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center"
+    >
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative">
+          <motion.div
+            className="w-16 h-16 border-4 border-emerald-200 rounded-full"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.div
+            className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+        <p className="text-emerald-800 font-medium">Loading repository...</p>
+      </div>
+    </motion.div>
+  );
+};
+
+// RepositoryCard Component
+export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, index }) => {
   const [celebration, setCelebration] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleStarClick = useCallback((e: React.MouseEvent) => {
+  const handleStarClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setCelebration(true);
     confetti({
@@ -19,11 +92,12 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, index }) => {
     setTimeout(() => setCelebration(false), 1000);
   }, []);
 
-  const handleClick = async (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsLoading(true);
     router.push(`/dashboard/${repo.name}`);
   };
+
 
   return (
     <>
@@ -94,31 +168,6 @@ const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, index }) => {
   );
 };
 
-const LoadingOverlay = () => {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center"
-    >
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative">
-          <motion.div
-            className="w-16 h-16 border-4 border-emerald-200 rounded-full"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.div
-            className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent"
-            animate={{ rotate: -360 }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-          />
-        </div>
-        <p className="text-emerald-800 font-medium">Loading repository...</p>
-      </div>
-    </motion.div>
-  );
-};
+
 
 export default LoadingOverlay;

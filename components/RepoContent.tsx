@@ -1,7 +1,15 @@
 import { FC, useState } from "react";
-import { ProcessedContent } from "@/types/github";
 import { ChevronRight, ChevronDown, File, Folder } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Update ProcessedContent interface
+interface ProcessedContent {
+  path: string;
+  type: 'dir' | 'file';  // Changed from "directory" to "dir"
+  size?: number;
+  content?: string;
+  children?: ProcessedContent[];
+}
 
 interface RepoContentProps {
   content: ProcessedContent[];
@@ -19,11 +27,11 @@ export const RepoContent: FC<RepoContentProps> = ({ content }) => {
     }
     setExpandedPaths(newExpandedPaths);
   };
-
+ 
   const renderContent = (items: ProcessedContent[], level = 0) => {
     return items.map((item) => {
       const isExpanded = expandedPaths.has(item.path);
-      const hasChildren = item.type === "directory" && item.children?.length;
+      const hasChildren = item.type === 'dir' && item.children?.length;  // Fixed type comparison
 
       return (
         <div key={item.path} className="w-full">
@@ -48,7 +56,7 @@ export const RepoContent: FC<RepoContentProps> = ({ content }) => {
               )}
             </span>
             <span className="flex items-center gap-2">
-              {item.type === "directory" ? (
+              {item.type === 'dir' ? (  // Fixed type comparison
                 <Folder className="h-4 w-4 text-blue-500" />
               ) : (
                 <File className="h-4 w-4 text-gray-500" />

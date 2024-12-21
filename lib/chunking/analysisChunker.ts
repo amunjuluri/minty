@@ -3,6 +3,7 @@ interface FileChunk {
   type: string;
   path: string;
   size: number;
+  tokens?: number;  // Add tokens as an optional property
   chunkIndex?: number;
   isPartialChunk?: boolean;
   totalChunks?: number;
@@ -15,8 +16,8 @@ interface AnalysisChunk {
   context: string;
 }
 
-const MAX_TOKENS = 3000; // GPT-3.5 context limit
-const CHARS_PER_TOKEN = 1; // Average estimation
+const MAX_TOKENS = 3000; 
+const CHARS_PER_TOKEN = 1;
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
@@ -31,22 +32,19 @@ function splitLargeFile(file: FileChunk): FileChunk[] {
   const totalChunks = Math.ceil(totalTokens / MAX_TOKENS);
 
   while (content.length > 0) {
-    // Calculate chunk size based on tokens
     const maxChars = MAX_TOKENS * CHARS_PER_TOKEN;
     const chunkSize = Math.min(maxChars, content.length);
 
-    // Find a clean break point
     let splitPoint = chunkSize;
     if (chunkSize < content.length) {
-      // Try to split at semantic boundaries in order of preference
       const boundaries = [
-        content.lastIndexOf("\n\n", chunkSize), // Prefer paragraph breaks
-        content.lastIndexOf("\n", chunkSize), // Then line breaks
-        content.lastIndexOf(". ", chunkSize), // Then sentences
-        content.lastIndexOf(" ", chunkSize), // Finally word breaks
+        content.lastIndexOf("\n\n", chunkSize),
+        content.lastIndexOf("\n", chunkSize),
+        content.lastIndexOf(". ", chunkSize),
+        content.lastIndexOf(" ", chunkSize),
       ];
 
-      const validBoundary = boundaries.find((b) => b > chunkSize * 0.75); // Ensure chunk is at least 75% full
+      const validBoundary = boundaries.find((b) => b > chunkSize * 0.75);
       if (validBoundary !== undefined) {
         splitPoint = validBoundary;
       }
@@ -71,6 +69,7 @@ function splitLargeFile(file: FileChunk): FileChunk[] {
 
   return chunks;
 }
+
 export function createAnalysisChunks(files: FileChunk[]): AnalysisChunk[] {
   const chunks: AnalysisChunk[] = [];
 
