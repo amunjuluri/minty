@@ -155,6 +155,10 @@ const Home: NextPage = () => {
     }
   ];
 
+  const handleDemoClick = () => {
+    window.open('https://www.loom.com/share/b7a056a8f40c4e8e8e8f1bf176f0286f?sid=d3f99aa8-2371-4a37-bf4d-28bcd7a0c1a4', '_blank', 'noopener,noreferrer');
+   };
+
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       <GradientPattern />
@@ -257,12 +261,14 @@ const Home: NextPage = () => {
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
               </motion.button>
+              
               <motion.button 
                 variants={buttonVariants}
                 initial="initial"
                 whileHover="hover"
                 whileTap="tap"
                 type="button"
+                onClick={handleDemoClick}
                 className="px-8 py-4 text-green-600 hover:text-green-700 rounded-xl font-medium transition-colors flex items-center gap-2"
               >
                 Live Demo
