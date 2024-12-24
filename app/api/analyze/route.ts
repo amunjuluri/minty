@@ -8,9 +8,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { files } = body;
-    console.log("man here are your so called usefull files", files.fullContent);
-    // Validate the input structure
-    if (!files || !files.fullContent || !Array.isArray(files.fullContent)) {
+
+    if (!files?.fullContent?.length) {
       return new Response(
         JSON.stringify({
           error: "Invalid input: files.fullContent array is required",
@@ -20,60 +19,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Process the content through the streaming analyzer
-    const response = await analyzeRepositoryWithStreaming(
-      files.fullContent as ProcessedContent[],
-      {
-        onProgress: (progress) => {
-          console.log(`Analysis progress: ${progress}%`);
-        },
+    // Create transform stream for proper streaming
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
+
+    // Start analysis in background
+    (async () => {
+      try {
+        const response = await analyzeRepositoryWithStreaming(
+          files.fullContent as ProcessedContent[],
+          {
+            onProgress: (progress) => {
+              console.log(`Analysis progress: ${progress}%`);
+            },
+          }
+        );
+
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("Failed to initialize stream reader");
+
+        // Stream chunks immediately instead of accumulating
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          await writer.write(value);
+        }
+      } catch (error) {
+        console.error("Streaming error:", error);
+      } finally {
+        await writer.close();
       }
-    );
+    })().catch(console.error);
 
-    // Convert streaming response to JSON response
-    const reader = response.body?.getReader();
-    let analysisText = "";
+    // Return the readable stream immediately
+    return new Response(stream.readable, {
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    });
 
-    if (!reader) {
-      throw new Error("Failed to initialize stream reader");
-    }
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        break;
-      }
-
-      // Decode and accumulate the chunk
-      analysisText += new TextDecoder().decode(value);
-    }
-
-    // Return JSON response that matches the expected format
-    return new Response(
-      // JSON.stringify([
-      //   {
-      analysisText,
-      // dependencies: "",
-      // functionality: "",
-      // codeQuality: "",
-      // improvements: "",
-      // },
-      // ]
-
-      {
-        headers: {
-          "Content-Type": "text/plain",
-        },
-      }
-    );
   } catch (error) {
     console.error("Repository analysis failed:", error);
     return new Response(
       JSON.stringify({
         error: "Analysis failed",
         message: error instanceof Error ? error.message : "Unknown error",
-        details: error instanceof Error ? error.stack : undefined,
       }),
       { status: 500 }
     );
