@@ -9,7 +9,7 @@ import { RepositoryOverview } from "@/components/RepositoryOverview";
 
 async function RepoAnalysis({ repoName }: { repoName: string }) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const session = (await getServerSession(authOptions)) as Session;
 
     if (!session?.accessToken) {
